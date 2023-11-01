@@ -66,3 +66,71 @@ FROM
     Musics M
     JOIN Categories C ON M.CategoryID = C.CategoryID
     JOIN Artists A ON M.ArtistID = A.ArtistID;
+CREATE PROCEDURE usp_CreateMusic
+    @Name VARCHAR(255),
+    @Duration INT,
+    @CategoryID INT,
+    @ArtistID INT
+AS
+BEGIN
+    INSERT INTO Musics (Name, Duration, CategoryID, ArtistID)
+    VALUES (@Name, @Duration, @CategoryID, @ArtistID);
+END;
+
+
+CREATE PROCEDURE usp_CreateUser
+    @Name VARCHAR(50),
+    @Surname VARCHAR(50),
+    @Username VARCHAR(50),
+    @Password VARCHAR(50),
+    @Gender VARCHAR(10)
+AS
+BEGIN
+    INSERT INTO Users (Name, Surname, Username, Password, Gender)
+    VALUES (@Name, @Surname, @Username, @Password, @Gender);
+END;
+
+
+CREATE PROCEDURE usp_CreateCategory
+    @Name VARCHAR(255)
+AS
+BEGIN
+    INSERT INTO Categories (Name)
+    VALUES (@Name);
+END;
+
+ALTER TABLE Musics
+ADD IsDeleted BIT DEFAULT 0;
+
+
+CREATE TRIGGER tr_MusicDelete
+ON Musics
+INSTEAD OF DELETE
+AS
+BEGIN
+    UPDATE m
+    SET IsDeleted = 1
+    FROM Musics m
+    INNER JOIN DELETED d ON m.MusicID = d.MusicID
+    WHERE m.IsDeleted = 0;
+
+    DELETE m
+    FROM Musics m
+    INNER JOIN DELETED d ON m.MusicID = d.MusicID
+    WHERE m.IsDeleted = 1;
+END;
+
+
+CREATE FUNCTION fn_GetArtistCountForUser(@UserID INT)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @ArtistCount INT;
+    
+    SELECT @ArtistCount = COUNT(DISTINCT M.ArtistID)
+    FROM Musics M
+    JOIN Users U ON U.UserID = @UserID
+    WHERE U.UserID = @UserID;
+    
+    RETURN @ArtistCount;
+END;
